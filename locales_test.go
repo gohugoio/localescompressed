@@ -56,6 +56,8 @@ func TestGetTranslator(t *testing.T) {
 	c.Run("Sample", func(c *qt.C) {
 		assertSame(c, GetTranslator("en"), en.New())
 		assertSame(c, GetTranslator("nn"), nn.New())
+		// find . -name "*.go" | xargs grep "New() locales.Translator" | wc -l in locales.
+		c.Assert(translatorFuncs, qt.HasLen, 764)
 	})
 
 	c.Run("Para", func(c *qt.C) {
