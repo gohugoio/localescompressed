@@ -52,6 +52,12 @@ func TestGetTranslator(t *testing.T) {
 		c.Assert(tnn.MonthWide(d.Month()), qt.Equals, "januar")
 	})
 
+	c.Run("BasicWithHyphenatedKey", func(c *qt.C) {
+		tnn := GetTranslator("nn-NO")
+		c.Assert(tnn, qt.Not(qt.IsNil))
+		c.Assert(tnn.MonthWide(d.Month()), qt.Equals, "januar")
+	})
+
 	// Sample tests; verify that the compression script works correctly.
 	c.Run("Sample", func(c *qt.C) {
 		assertSame(c, GetTranslator("en"), en.New())
