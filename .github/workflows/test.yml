@@ -20,9 +20,6 @@ jobs:
       - name: Install staticcheck
         run: go install honnef.co/go/tools/cmd/staticcheck@latest
         shell: bash
-      - name: Install golint
-        run: go install golang.org/x/lint/golint@latest
-        shell: bash
       - name: Update PATH
         run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
         shell: bash
