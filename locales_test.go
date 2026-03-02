@@ -97,3 +97,22 @@ func TestGetCurrency(t *testing.T) {
 	c.Assert(GetCurrency("usd"), qt.Equals, currency.USD)
 	c.Assert(GetCurrency("foo"), qt.Equals, currency.Type(-1))
 }
+
+func BenchmarkGetTranslator(b *testing.B) {
+	d, _ := time.Parse("2006-Jan-02", "2018-Jan-06")
+	for b.Loop() {
+		for i := 0; i < 10; i++ {
+			for _, locale := range []string{"nn_NO", "nn", "nyn", "sg", "se", "rwk", "mas"} {
+				tnn := GetTranslator(locale)
+				if tnn == nil {
+					b.Fatal("translator is nil")
+				}
+
+				if tnn.MonthWide(d.Month()) == "" {
+					b.Fatal("translator is invalid")
+				}
+
+			}
+		}
+	}
+}
