@@ -1,8 +1,8 @@
+//go:generate go run main.go
 package main
 
 import (
 	"bytes"
-	"crypto/md5"
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
@@ -10,7 +10,6 @@ import (
 	"go/token"
 	"io"
 	"io/fs"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -18,6 +17,8 @@ import (
 	"regexp"
 	"sort"
 	"strings"
+
+	"github.com/cespare/xxhash/v2"
 
 	"golang.org/x/tools/go/packages"
 )
@@ -99,7 +100,7 @@ func createTranslatorsMap() {
 		pkg := pkgs[0]
 		gf := pkg.GoFiles[0]
 
-		src, err := ioutil.ReadFile(gf)
+		src, err := os.ReadFile(gf)
 		if err != nil {
 			log.Fatal(err)
 		}
@@ -165,7 +166,7 @@ func (c *coll) collectFields(node ast.Node) bool {
 			re := regexp.MustCompile(`\b` + recName + `\.`)
 			body = re.ReplaceAllString(body, " ln.")
 			body = body[strings.Index(body, name):]
-			hash := toMd5(body)
+			hash := toXxHash(body)
 			body = body[len(name)+1:]
 			fullName := name + "_" + hash
 
@@ -260,15 +261,15 @@ func uniqueStringsSorted(s []string) []string {
 	return s[:i+1]
 }
 
-func toMd5(f string) string {
-	h := md5.New()
+func toXxHash(f string) string {
+	h := xxhash.New()
 	h.Write([]byte(f))
 	return hex.EncodeToString(h.Sum([]byte{}))
 }
 
 func createCurrenciesMap() {
 	cfg := &packages.Config{
-		Mode:  packages.LoadSyntax,
+		Mode:  packages.NeedSyntax | packages.NeedFiles,
 		Tests: false,
 	}
 

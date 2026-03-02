@@ -50,6 +50,8 @@ func TestGetTranslator(t *testing.T) {
 		tnn := GetTranslator("nn_NO")
 		c.Assert(tnn, qt.Not(qt.IsNil))
 		c.Assert(tnn.MonthWide(d.Month()), qt.Equals, "januar")
+		c.Assert(tnn.MonthAbbreviated(d.Month()), qt.Equals, "jan.")
+		c.Assert(tnn.MonthsNarrow(), qt.DeepEquals, []string{"J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"})
 	})
 
 	c.Run("BasicWithHyphenatedKey", func(c *qt.C) {
@@ -63,7 +65,7 @@ func TestGetTranslator(t *testing.T) {
 		assertSame(c, GetTranslator("en"), en.New())
 		assertSame(c, GetTranslator("nn"), nn.New())
 		// find . -name "*.go" | xargs grep "New() locales.Translator" | wc -l in locales.
-		c.Assert(translatorFuncs, qt.HasLen, 764)
+		c.Assert(translatorFuncs, qt.HasLen, 1122)
 	})
 
 	c.Run("Para", func(c *qt.C) {
@@ -88,6 +90,35 @@ func TestGetTranslator(t *testing.T) {
 			}
 		}
 	})
+}
+
+func TestAllMethodsInAllLocalesAndMakeSureTheyDoNotPanic(t *testing.T) {
+	for _, tr := range All() {
+		// Invoke all methods to make sure they do not panic.
+		// The source data is not complete, so we cannot do any assertions on the output.
+		tr.Locale()
+		tr.PluralsCardinal()
+		tr.PluralsOrdinal()
+		tr.PluralsRange()
+		tr.CardinalPluralRule(1, 0)
+		tr.OrdinalPluralRule(1, 0)
+		tr.RangePluralRule(1, 0, 2, 0)
+		tr.MonthAbbreviated(time.January)
+		tr.MonthsAbbreviated()
+		tr.MonthNarrow(time.January)
+		tr.MonthsNarrow()
+		tr.MonthWide(time.January)
+		tr.MonthsWide()
+		tr.WeekdayAbbreviated(time.Monday)
+		tr.WeekdaysAbbreviated()
+		tr.WeekdayNarrow(time.Monday)
+		tr.WeekdaysNarrow()
+		tr.WeekdayShort(time.Monday)
+		tr.WeekdaysShort()
+		tr.WeekdayWide(time.Monday)
+		tr.WeekdaysWide()
+
+	}
 }
 
 func TestGetCurrency(t *testing.T) {

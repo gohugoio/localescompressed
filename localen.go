@@ -29,7 +29,7 @@ func (ln *localen) PluralsOrdinal() []locales.PluralRule {
 // returns an array of range plural rules associated
 // with this translator
 func (ln *localen) PluralsRange() []locales.PluralRule {
-	return ln.pluralsRange
+	return ln.fnPluralsRange(ln)
 }
 
 // returns the cardinal PluralRule given 'num' and digits/precision of 'v' for locale
@@ -54,27 +54,27 @@ func (ln *localen) MonthAbbreviated(month time.Month) string {
 
 // returns the locales abbreviated months
 func (ln *localen) MonthsAbbreviated() []string {
-	return ln.monthsAbbreviated
+	return ln.fnMonthsAbbreviated(ln)
 }
 
 // returns the locales narrow month given the 'month' provided
 func (ln *localen) MonthNarrow(month time.Month) string {
-	return ln.monthsNarrow[month]
+	return ln.fnMonthNarrow(ln, month)
 }
 
 // returns the locales narrow months
 func (ln *localen) MonthsNarrow() []string {
-	return ln.monthsNarrow[1:]
+	return ln.fnMonthsNarrow(ln)
 }
 
 // returns the locales wide month given the 'month' provided
 func (ln *localen) MonthWide(month time.Month) string {
-	return ln.monthsWide[month]
+	return ln.fnMonthWide(ln, month)
 }
 
 // returns the locales wide months
 func (ln *localen) MonthsWide() []string {
-	return ln.monthsWide[1:]
+	return ln.fnMonthsWide(ln)
 }
 
 // returns the locales abbreviated weekday given the 'weekday' provided
@@ -84,37 +84,37 @@ func (ln *localen) WeekdayAbbreviated(weekday time.Weekday) string {
 
 // returns the locales abbreviated weekdays
 func (ln *localen) WeekdaysAbbreviated() []string {
-	return ln.daysAbbreviated
+	return ln.fnWeekdaysAbbreviated(ln)
 }
 
 // returns the locales narrow weekday given the 'weekday' provided
 func (ln *localen) WeekdayNarrow(weekday time.Weekday) string {
-	return ln.daysNarrow[weekday]
+	return ln.fnWeekdayNarrow(ln, weekday)
 }
 
 // WeekdaysNarrowreturns the locales narrow weekdays
 func (ln *localen) WeekdaysNarrow() []string {
-	return ln.daysNarrow
+	return ln.fnWeekdaysNarrow(ln)
 }
 
 // returns the locales short weekday given the 'weekday' provided
 func (ln *localen) WeekdayShort(weekday time.Weekday) string {
-	return ln.daysShort[weekday]
+	return ln.fnWeekdayShort(ln, weekday)
 }
 
 // returns the locales short weekdays
 func (ln *localen) WeekdaysShort() []string {
-	return ln.daysShort
+	return ln.fnWeekdaysShort(ln)
 }
 
 // returns the locales wide weekday given the 'weekday' provided
 func (ln *localen) WeekdayWide(weekday time.Weekday) string {
-	return ln.daysWide[weekday]
+	return ln.fnWeekdayWide(ln, weekday)
 }
 
 // returns the locales wide weekdays
 func (ln *localen) WeekdaysWide() []string {
-	return ln.daysWide
+	return ln.fnWeekdaysWide(ln)
 }
 
 // The following Functions are common Formatting functionsfor the Translator's Locale
@@ -150,7 +150,7 @@ func (ln *localen) FmtDateMedium(t time.Time) string {
 	return ln.fnFmtDateMedium(ln, t)
 }
 
-//  returns the long date representation of 't' for locale
+// returns the long date representation of 't' for locale
 func (ln *localen) FmtDateLong(t time.Time) string {
 	return ln.fnFmtDateLong(ln, t)
 }
