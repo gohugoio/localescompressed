@@ -93,7 +93,11 @@ func TestGetTranslator(t *testing.T) {
 }
 
 func TestAllMethodsInAllLocalesAndMakeSureTheyDoNotPanic(t *testing.T) {
+	c := qt.New(t)
+
+	count := 0
 	for _, tr := range All() {
+		count++
 		// Invoke all methods to make sure they do not panic.
 		// The source data is not complete, so we cannot do any assertions on the output.
 		tr.Locale()
@@ -119,6 +123,8 @@ func TestAllMethodsInAllLocalesAndMakeSureTheyDoNotPanic(t *testing.T) {
 		tr.WeekdaysWide()
 
 	}
+
+	c.Assert(count, qt.Equals, 1122)
 }
 
 func TestGetCurrency(t *testing.T) {

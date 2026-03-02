@@ -31,6 +31,12 @@ package localescompressed
 func main() {
 	createTranslatorsMap()
 	createCurrenciesMap()
+
+	// Finally, format with  gofumpt -w .
+	cmd := exec.Command("gofumpt", "-w", "../locales.autogen.go", "../currencies.autogen.go")
+	if err := cmd.Run(); err != nil {
+		log.Fatal(err)
+	}
 }
 
 func createTranslatorsMap() {
@@ -81,6 +87,8 @@ func createTranslatorsMap() {
 	var (
 		allFields []string
 		methodSet = make(map[string]bool)
+		dataDedup = make(map[string]string)
+		dataVarsW = &bytes.Buffer{}
 		initW     = &bytes.Buffer{}
 		counter   = 0
 	)
@@ -105,7 +113,7 @@ func createTranslatorsMap() {
 			log.Fatal(err)
 		}
 
-		collector := &coll{src: src, locale: k, w: f, initW: initW, methodSet: methodSet}
+		collector := &coll{src: src, locale: k, w: f, initW: initW, methodSet: methodSet, dataDedup: dataDedup, dataVarsW: dataVarsW}
 
 		for _, f := range pkg.Syntax {
 			for _, node := range f.Decls {
@@ -133,6 +141,7 @@ func createTranslatorsMap() {
 
 	fmt.Fprint(f, "\n}\n")
 
+	fmt.Fprint(f, dataVarsW.String())
 	fmt.Fprint(f, "func init() {\n")
 	fmt.Fprint(f, initW.String())
 	fmt.Fprint(f, "\n}")
@@ -143,6 +152,8 @@ type coll struct {
 	w         io.Writer
 	initW     io.Writer
 	methodSet map[string]bool
+	dataDedup map[string]string // hash -> variable name
+	dataVarsW *bytes.Buffer     // buffer for shared data var declarations
 
 	// Local
 	locale  string
@@ -215,6 +226,62 @@ func (c *coll) collectFields(node ast.Node) bool {
 	return false
 }
 
+// Fields whose data literals should be deduplicated into shared package-level variables.
+var deduplicateFields = []string{
+	"timezones",
+	"currencies",
+	"monthsAbbreviated",
+	"monthsNarrow",
+	"monthsWide",
+	"daysAbbreviated",
+	"daysNarrow",
+	"daysShort",
+	"daysWide",
+	"periodsAbbreviated",
+	"erasAbbreviated",
+	"erasWide",
+}
+
+// deduplicateDataFields scans body lines for known data fields and replaces
+// inline literals with references to shared package-level variables.
+func (c *coll) deduplicateDataFields(body string) string {
+	lines := strings.Split(body, "\n")
+	for i, line := range lines {
+		trimmed := strings.TrimSpace(line)
+		for _, field := range deduplicateFields {
+			prefix := field + ":"
+			if !strings.HasPrefix(trimmed, prefix) {
+				continue
+			}
+			// Extract the value: everything after "field:" and whitespace, minus trailing comma.
+			rest := strings.TrimSpace(trimmed[len(prefix):])
+			if !strings.HasSuffix(rest, ",") {
+				continue
+			}
+			value := rest[:len(rest)-1] // strip trailing comma
+
+			hash := toXxHash(value)
+			funcName, exists := c.dataDedup[hash]
+			if !exists {
+				funcName = fmt.Sprintf("data_%s_%s", field, hash)
+				c.dataDedup[hash] = funcName
+				// Infer return type from the literal prefix.
+				retType := "[]string"
+				if strings.HasPrefix(value, "map[") {
+					retType = "map[string]string"
+				}
+				fmt.Fprintf(c.dataVarsW, "func %s() %s { return %s }\n", funcName, retType, value)
+			}
+
+			// Reconstruct the line with a function call, preserving leading whitespace.
+			leadingWS := line[:len(line)-len(strings.TrimLeft(line, " \t"))]
+			lines[i] = fmt.Sprintf("%s%s: %s(),", leadingWS, field, funcName)
+			break
+		}
+	}
+	return strings.Join(lines, "\n")
+}
+
 var returnStructRe = regexp.MustCompile(`return &.*{`)
 
 func (c *coll) collectNew(node ast.Node) bool {
@@ -237,6 +304,7 @@ func (c *coll) collectNew(node ast.Node) bool {
 					body += fmt.Sprintf("\n%s: %s,", parts[0], parts[1])
 				}
 			}
+			body = c.deduplicateDataFields(body)
 			fmt.Fprintf(c.initW, "\ttranslatorFuncs[%q] = %s\n", strings.ToLower(c.locale), fmt.Sprintf("func() locales.Translator {\nreturn &localen{\n%s\n}\n}", body))
 		}
 	}
