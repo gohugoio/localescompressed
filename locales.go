@@ -3,6 +3,7 @@
 package localescompressed
 
 import (
+	"iter"
 	"strings"
 	"sync"
 
@@ -41,6 +42,22 @@ func GetTranslator(locale string) locales.Translator {
 	mu.Unlock()
 
 	return t
+}
+
+// All returns a sequence of all translators.
+// Note that the order is not guaranteed, and that the translators are created on demand when iterating.
+func All() iter.Seq2[string, locales.Translator] {
+	return func(yield func(k string, v locales.Translator) bool) {
+		mu.RLock()
+		defer mu.RUnlock()
+
+		for k, fn := range translatorFuncs {
+			t := fn()
+			if !yield(k, t) {
+				return
+			}
+		}
+	}
 }
 
 // GetCurrency gets the currency for the given ISO 4217 code,
