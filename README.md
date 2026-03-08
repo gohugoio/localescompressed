@@ -8,3 +8,6 @@ The locales from https://github.com/gohugoio/locales in one package/struct.
 ```
 go generate ./gen
 ```
+
+
+Superseeded by https://github.com/bep/golocales
